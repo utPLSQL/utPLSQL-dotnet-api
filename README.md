@@ -9,7 +9,7 @@
     testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
     // Runs tests for the user tosamtest
-    testRunner.RunTests(type: Type.User, owner: null, name: "toscamtest", procedure: null);
+    testRunner.RunTests(paths: new List<string>() { "toscamtest" });
 
     var events = new List<@event>();
     testRunner.ConsumeResult(@event =>
@@ -22,9 +22,10 @@
     var testRunner = new RealTimeTestRunner();
     testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-    // Runs tests for the user tosamtest
-    testRunner.RunTestsWithCoverage(type: Type.User, owner: null, name: "toscamtest", procedure: null, 
-                                    coverageSchemas: "'toscam'", includeObjects: "'pa_m720','pa_m770'", 
+    // Runs tests for the user tosamtest with coverage 
+    testRunner.RunTestsWithCoverage(paths: new List<string>() { "toscamtest" },
+                                    coverageSchemas: new List<string>() { "toscam" },
+                                    includeObjects: new List<string>() { "pa_m720", "pa_m770" },
                                     excludeObjects: null);
 
     var events = new List<@event>();
