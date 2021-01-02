@@ -14,7 +14,7 @@ namespace utPLSQL
             var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-            testRunner.RunTestsWithCoverage(type: "USER", owner: null, name: "toscamtest", procedure: null, coverageSchemas: "'toscam'", "'pa_m720','pa_m770'", null);
+            testRunner.RunTestsWithCoverage(type: Type.User, owner: null, name: "toscamtest", procedure: null, coverageSchemas: "'toscam'", "'pa_m720','pa_m770'", null);
 
             var events = new List<@event>();
             testRunner.ConsumeResult(@event =>
