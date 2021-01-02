@@ -15,6 +15,6 @@
     <tags>utPLSQL</tags>
   </metadata>
 	<files>
-		<file src="blue-icon-transparent.png" target="images\" />
+		<file src="blue-icon-transparent.png" target="images" />
 	</files>
 </package>
