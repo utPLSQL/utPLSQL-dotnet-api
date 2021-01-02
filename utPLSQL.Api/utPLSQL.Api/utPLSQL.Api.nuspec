@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package >
   <metadata>
-    <id>$id$</id>
-    <version>$version$</version>
-    <title>$title$</title>
-    <authors>$author$</authors>
+    <id>utPLSQL.Api</id>
+    <version>1.0.1</version>
+    <title>utPLSQL API</title>
+    <authors>Simon Martinelli</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">Apache-2.0+</license>
-    <projectUrl>http://project_url_here_or_delete_this_line/</projectUrl>
-    <iconUrl>http://icon_url_here_or_delete_this_line/</iconUrl>
-    <description>$description$</description>
-    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
-    <copyright>$copyright$</copyright>
-    <tags>Tag1 Tag2</tags>
+    <projectUrl>https://github.com/utPLSQL/utPLSQL-dotnet-api</projectUrl>
+	<icon>images/blue-icon-transparent.png</icon>
+    <description>.NET API for utPLSQL</description>
+    <releaseNotes>Run tests and code coverage and consume the results and the report</releaseNotes>
+    <copyright>Copyright © 2021</copyright>
+    <tags>utPLSQL</tags>
   </metadata>
+	<files>
+		<file src="blue-icon-transparent.png" target="images\" />
+	</files>
 </package>

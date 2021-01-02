@@ -54,6 +54,7 @@
     <None Include="realtime-report.xsd">
       <SubType>Designer</SubType>
     </None>
+    <None Include="utPLSQL.Api.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
