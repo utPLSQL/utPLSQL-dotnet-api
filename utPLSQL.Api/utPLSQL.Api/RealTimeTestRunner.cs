@@ -1,7 +1,7 @@
 ﻿using Oracle.ManagedDataAccess.Client;
 using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.IO;
 using System.Xml.Serialization;
 
@@ -12,41 +12,35 @@ namespace utPLSQL
     /// </summary>
     public class RealTimeTestRunner : TestRunner<@event>
     {
-        public override void RunTests(Type type, string owner, string name, string procedure)
+        public override void RunTests(List<string> paths)
         {
-            var testsToRun = GetTestsToRun(type, owner, name, procedure);
-
-            if (testsToRun != null)
+            if (paths != null && paths.Count > 0)
             {
                 realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                var proc = @"DECLARE
+                var proc = $@"DECLARE
                                l_reporter ut_realtime_reporter := ut_realtime_reporter();
                              BEGIN
                                l_reporter.set_reporter_id(:id);
                                l_reporter.output_buffer.init();
-                               ut_runner.run(a_paths => ut_varchar2_list(:test), a_reporters => ut_reporters(l_reporter));
+                               ut_runner.run(a_paths => ut_varchar2_list({ConvertToUtVarchar2List(paths)}), 
+                                             a_reporters => ut_reporters(l_reporter));
                              END;";
 
                 var cmd = new OracleCommand(proc, produceConnection);
                 cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
-                cmd.Parameters.Add("test", OracleDbType.Varchar2, ParameterDirection.Input).Value = testsToRun;
                 cmd.ExecuteNonQuery();
             }
         }
 
-
-        public override void RunTestsWithCoverage(Type type, string owner, string name, string procedure, string coverageSchemas,
-            string includeObjects, string excludeObjects)
+        public override void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects)
         {
-            var testsToRun = GetTestsToRun(type, owner, name, procedure);
-
-            if (testsToRun != null)
+            if (paths != null && paths.Count > 0)
             {
                 realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
                 coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                var proc = @"DECLARE
+                var proc = $@"DECLARE
                                l_rt_rep  ut_realtime_reporter      := ut_realtime_reporter();
                                l_cov_rep ut_coverage_html_reporter := ut_coverage_html_reporter();
                              BEGIN
@@ -55,21 +49,21 @@ namespace utPLSQL
                                l_cov_rep.set_reporter_id(:coverage_id);
                                l_cov_rep.output_buffer.init();
                                sys.dbms_output.enable(NULL);
-                               ut_runner.run(a_paths => ut_varchar2_list(:test), ";
+                               ut_runner.run(a_paths => ut_varchar2_list({ConvertToUtVarchar2List(paths)}), ";
 
-                if (!string.IsNullOrWhiteSpace(coverageSchemas))
+                if (coverageSchemas != null && coverageSchemas.Count > 0)
                 {
-                    proc += $"a_coverage_schemes => ut_varchar2_list({coverageSchemas}), ";
+                    proc += $"a_coverage_schemes => ut_varchar2_list({ConvertToUtVarchar2List(coverageSchemas)}), ";
                 }
 
-                if (!string.IsNullOrWhiteSpace(includeObjects))
+                if (includeObjects != null && includeObjects.Count > 0)
                 {
-                    proc += $"a_include_objects => ut_varchar2_list({includeObjects}), ";
+                    proc += $"a_include_objects => ut_varchar2_list({ConvertToUtVarchar2List(includeObjects)}), ";
                 }
 
-                if (!string.IsNullOrWhiteSpace(excludeObjects))
+                if (excludeObjects != null && excludeObjects.Count > 0)
                 {
-                    proc += $"a_exclude_objects => ut_varchar2_list({excludeObjects}), ";
+                    proc += $"a_exclude_objects => ut_varchar2_list({ConvertToUtVarchar2List(excludeObjects)}), ";
                 }
 
                 proc += @"  a_reporters => ut_reporters(l_rt_rep, l_cov_rep)); 
@@ -79,19 +73,8 @@ namespace utPLSQL
                 var cmd = new OracleCommand(proc, produceConnection);
                 cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
                 cmd.Parameters.Add("coverage_id", OracleDbType.Varchar2, ParameterDirection.Input).Value = coverageReporterId;
-                cmd.Parameters.Add("test", OracleDbType.Varchar2, ParameterDirection.Input).Value = testsToRun;
 
-                try
-                {
-                    cmd.ExecuteNonQuery();
-                }
-                catch (Exception e)
-                {
-                    using (var eventLog = new EventLog("Application"))
-                    {
-                        eventLog.WriteEntry($"{e.Message} {e.StackTrace}", EventLogEntryType.Error, 0);
-                    }
-                }
+                cmd.ExecuteNonQuery();
             }
         }
 
@@ -123,29 +106,6 @@ namespace utPLSQL
             }
 
             reader.Close();
-        }
-
-        private static string GetTestsToRun(Type type, string owner, string name, string procedure)
-        {
-            string testsToRun = null;
-
-            switch (type)
-            {
-                case Type.User:
-                    testsToRun = name;
-                    break;
-                case Type.Package:
-                    testsToRun = $"{owner}.{name}";
-                    break;
-                case Type.Procedure:
-                    testsToRun = $"{owner}.{name}.{procedure}";
-                    break;
-                case Type.All:
-                    testsToRun = owner;
-                    break;
-            }
-
-            return testsToRun;
         }
     }
 }
