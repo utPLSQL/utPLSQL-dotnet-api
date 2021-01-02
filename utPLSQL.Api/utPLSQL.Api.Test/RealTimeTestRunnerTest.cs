@@ -9,12 +9,33 @@ namespace utPLSQL
     public class RealTimeTestRunnerTest
     {
         [TestMethod]
-        public void TestToscamtest()
+        public void TestRunTests()
         {
             var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-            testRunner.RunTestsWithCoverage(type: Type.User, owner: null, name: "toscamtest", procedure: null, coverageSchemas: "'toscam'", "'pa_m720','pa_m770'", null);
+            testRunner.RunTests(paths: new List<string>(new string[] { "toscamtest" }));
+
+            var events = new List<@event>();
+            testRunner.ConsumeResult(@event =>
+            {
+                events.Add(@event);
+            });
+
+            Assert.AreEqual("pre-run", events[0].type);
+            Assert.AreEqual("post-run", events.Last().type);
+        }
+
+        [TestMethod]
+        public void TestRunTestsWithCoverage()
+        {
+            var testRunner = new RealTimeTestRunner();
+            testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
+
+            testRunner.RunTestsWithCoverage(paths: new List<string>(new string[] { "toscamtest" }),
+                                            coverageSchemas: new List<string>(new string[] { "toscam" }),
+                                            includeObjects: new List<string>(new string[] { "pa_m720", "pa_m770" }),
+                                            excludeObjects: null);
 
             var events = new List<@event>();
             testRunner.ConsumeResult(@event =>

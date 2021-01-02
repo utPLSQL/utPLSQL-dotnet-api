@@ -1,5 +1,6 @@
 ﻿using Oracle.ManagedDataAccess.Client;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Text;
 
@@ -60,24 +61,17 @@ namespace utPLSQL
         /// <summary>
         /// Run tests
         /// </summary>
-        /// <param name="type">The type to use</param>
-        /// <param name="owner">Owner of the object</param>
-        /// <param name="name">Name of the object</param>
-        /// <param name="procedure">Procedure name</param>
-        public abstract void RunTests(Type type, string owner, string name, string procedure);
+        /// <param name="paths">List of path expressions</param>
+        public abstract void RunTests(List<string> paths);
 
         /// <summary>
         /// Run tests with coveage
         /// </summary>
-        /// <param name="type">The type to use</param>
-        /// <param name="owner">Owner of the object</param>
-        /// <param name="name">Name of the object</param>
-        /// <param name="procedure">Procedure name</param>
-        /// <param name="coverageSchemas">Schemas to cover</param>
-        /// <param name="includeObjects">Objects to include</param>
-        /// <param name="excludeObjects">Objects to exclude</param>
-        public abstract void RunTestsWithCoverage(Type type, string owner, string name, string procedure, string coverageSchemas,
-            string includeObjects, string excludeObjects);
+        /// <param name="paths">List of path expressions</param>
+        /// <param name="coverageSchemas">List of schemas to cover</param>
+        /// <param name="includeObjects">List of objects to include</param>
+        /// <param name="excludeObjects">List of objects to exclude</param>
+        public abstract void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects);
 
         /// <summary>
         /// Consumes the results and calls the callback action on each result
@@ -119,9 +113,21 @@ namespace utPLSQL
 
             return sb.ToString();
         }
-    }
-    public enum Type
-    {
-        User, Package, Procedure, All
+
+        protected string ConvertToUtVarchar2List(List<string> elements)
+        {
+            var sb = new StringBuilder();
+            bool first = true;
+            foreach (var element in elements)
+            {
+                if (!first)
+                {
+                    sb.Append(",");
+                }
+                sb.Append("'").Append(element).Append("'");
+                first = false;
+            }
+            return sb.ToString();
+        }
     }
 }
