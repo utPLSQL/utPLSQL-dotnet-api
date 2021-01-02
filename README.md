@@ -1,6 +1,26 @@
 # utPLSQL .NET API
 .NET API for running utPLSQL v3+ unit tests from .NET applications
 
+## Usage
+
+### Run Tests and Consume Results
+
+    var testRunner = new RealTimeTestRunner();
+    testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
+
+    // Runs tests for the user tosamtest
+    testRunner.RunTests(type: Type.User, owner: null, name: "toscamtest", procedure: null);
+
+    var events = new List<@event>();
+    testRunner.ConsumeResult(@event =>
+    {
+        events.Add(@event);
+    });
+
+### Get Coverage Report
+
+    var report = testRunner.GetCoverageReport();
+
 ## Releases
 Releases are published to nuGet: https://www.nuget.org/packages/utPLSQL.Api/
 
