@@ -19,6 +19,20 @@
 
 ### Get Coverage Report
 
+    var testRunner = new RealTimeTestRunner();
+    testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
+
+    // Runs tests for the user tosamtest
+    testRunner.RunTestsWithCoverage(type: Type.User, owner: null, name: "toscamtest", procedure: null, 
+                                    coverageSchemas: "'toscam'", includeObjects: "'pa_m720','pa_m770'", 
+                                    excludeObjects: null);
+
+    var events = new List<@event>();
+    testRunner.ConsumeResult(@event =>
+    {
+        events.Add(@event);
+    });
+
     var report = testRunner.GetCoverageReport();
 
 ## Releases
