@@ -7,9 +7,12 @@ using System.Xml.Serialization;
 
 namespace utPLSQL
 {
+    /// <summary>
+    /// Implementation of TestRunner that uses ut_realtime_reporter
+    /// </summary>
     public class RealTimeTestRunner : TestRunner<@event>
     {
-        public override void RunTests(string type, string owner, string name, string procedure)
+        public override void RunTests(Type type, string owner, string name, string procedure)
         {
             var testsToRun = GetTestsToRun(type, owner, name, procedure);
 
@@ -33,7 +36,7 @@ namespace utPLSQL
         }
 
 
-        public override void RunTestsWithCoverage(string type, string owner, string name, string procedure, string coverageSchemas,
+        public override void RunTestsWithCoverage(Type type, string owner, string name, string procedure, string coverageSchemas,
             string includeObjects, string excludeObjects)
         {
             var testsToRun = GetTestsToRun(type, owner, name, procedure);
@@ -104,7 +107,7 @@ namespace utPLSQL
             var cmd = new OracleCommand(proc, consumeConnection);
             cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
             cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
-            
+
             // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
             cmd.InitialLOBFetchSize = -1;
 
@@ -122,22 +125,22 @@ namespace utPLSQL
             reader.Close();
         }
 
-        private static string GetTestsToRun(string type, string owner, string name, string procedure)
+        private static string GetTestsToRun(Type type, string owner, string name, string procedure)
         {
             string testsToRun = null;
 
             switch (type)
             {
-                case User:
+                case Type.User:
                     testsToRun = name;
                     break;
-                case Package:
+                case Type.Package:
                     testsToRun = $"{owner}.{name}";
                     break;
-                case Procedure:
+                case Type.Procedure:
                     testsToRun = $"{owner}.{name}.{procedure}";
                     break;
-                case All:
+                case Type.All:
                     testsToRun = owner;
                     break;
             }
