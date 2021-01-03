@@ -14,7 +14,7 @@ namespace utPLSQL
             var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-            testRunner.RunTests(paths: new List<string>() { "toscamtest" });
+            testRunner.RunTests(paths: "toscamtest");
 
             var events = new List<@event>();
             testRunner.ConsumeResult(@event =>
@@ -32,10 +32,8 @@ namespace utPLSQL
             var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-            testRunner.RunTestsWithCoverage(paths: new List<string>() { "toscamtest" },
-                                            coverageSchemas: new List<string>() { "toscam" },
-                                            includeObjects: new List<string>() { "pa_m720", "pa_m770" },
-                                            excludeObjects: null);
+            testRunner.RunTestsWithCoverage(path: "toscamtest", coverageSchema: "toscam",
+                                            includeObjects: new List<string>() { "pa_m720", "pa_m770" });
 
             var events = new List<@event>();
             testRunner.ConsumeResult(@event =>
