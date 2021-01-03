@@ -61,8 +61,8 @@ namespace utPLSQL
         /// <summary>
         /// Run tests
         /// </summary>
-        /// <param name="paths">List of path expressions</param>
-        public abstract void RunTests(List<string> paths);
+        /// <param name="paths">Path expressions</param>
+        public abstract void RunTests(params string[] paths);
 
         /// <summary>
         /// Run tests with coveage
@@ -71,7 +71,7 @@ namespace utPLSQL
         /// <param name="coverageSchemas">List of schemas to cover</param>
         /// <param name="includeObjects">List of objects to include</param>
         /// <param name="excludeObjects">List of objects to exclude</param>
-        public abstract void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects);
+        public abstract void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null);
 
         /// <summary>
         /// Consumes the results and calls the callback action on each result

@@ -12,9 +12,9 @@ namespace utPLSQL
     /// </summary>
     public class RealTimeTestRunner : TestRunner<@event>
     {
-        public override void RunTests(List<string> paths)
+        public override void RunTests(params string[] paths)
         {
-            if (paths != null && paths.Count > 0)
+            if (paths != null && paths.Length > 0)
             {
                 realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
@@ -23,7 +23,7 @@ namespace utPLSQL
                              BEGIN
                                l_reporter.set_reporter_id(:id);
                                l_reporter.output_buffer.init();
-                               ut_runner.run(a_paths => ut_varchar2_list({ConvertToUtVarchar2List(paths)}), 
+                               ut_runner.run(a_paths => ut_varchar2_list({ConvertToUtVarchar2List(new List<string>(paths))}), 
                                              a_reporters => ut_reporters(l_reporter));
                              END;";
 
@@ -33,7 +33,7 @@ namespace utPLSQL
             }
         }
 
-        public override void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects)
+        public override void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null)
         {
             if (paths != null && paths.Count > 0)
             {
