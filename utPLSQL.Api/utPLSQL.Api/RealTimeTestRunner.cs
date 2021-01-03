@@ -30,6 +30,8 @@ namespace utPLSQL
                 var cmd = new OracleCommand(proc, produceConnection);
                 cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
                 cmd.ExecuteNonQuery();
+
+                cmd.Dispose();
             }
         }
 
@@ -75,7 +77,14 @@ namespace utPLSQL
                 cmd.Parameters.Add("coverage_id", OracleDbType.Varchar2, ParameterDirection.Input).Value = coverageReporterId;
 
                 cmd.ExecuteNonQuery();
+
+                cmd.Dispose();
             }
+        }
+
+        public override void RunTestsWithCoverage(string path, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null)
+        {
+            this.RunTestsWithCoverage(new List<string>() { path }, new List<string>() { coverageSchema }, includeObjects, excludeObjects);
         }
 
         public override void ConsumeResult(Action<@event> action)
@@ -106,6 +115,7 @@ namespace utPLSQL
             }
 
             reader.Close();
+            cmd.Dispose();
         }
     }
 }

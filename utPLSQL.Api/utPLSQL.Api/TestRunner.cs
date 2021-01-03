@@ -20,7 +20,7 @@ namespace utPLSQL
 
         /// <summary>
         /// Connects to the database. 
-        /// The TestRunner uses two connections. One for executing the tests and one for consuming the reuslts
+        /// The TestRunner uses two connections. One for executing the tests and one for consuming the results
         /// </summary>
         /// <param name="username">Database username</param>
         /// <param name="password">Database password</param>
@@ -53,8 +53,12 @@ namespace utPLSQL
             var cmd = new OracleCommand("select ut.version() from dual", produceConnection);
             OracleDataReader reader = cmd.ExecuteReader();
             reader.Read();
+            
             var version = reader.GetString(0);
+            
             reader.Close();
+            cmd.Dispose();
+            
             return version;
         }
 
@@ -72,6 +76,15 @@ namespace utPLSQL
         /// <param name="includeObjects">List of objects to include</param>
         /// <param name="excludeObjects">List of objects to exclude</param>
         public abstract void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null);
+
+        /// <summary>
+        /// Run tests with coveage
+        /// </summary>
+        /// <param name="paths">The path</param>
+        /// <param name="coverageSchema">The schemas to cover</param>
+        /// <param name="includeObjects">List of objects to include</param>
+        /// <param name="excludeObjects">List of objects to exclude</param>
+        public abstract void RunTestsWithCoverage(string path, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null);
 
         /// <summary>
         /// Consumes the results and calls the callback action on each result
@@ -110,6 +123,7 @@ namespace utPLSQL
             }
 
             reader.Close();
+            cmd.Dispose();
 
             return sb.ToString();
         }
