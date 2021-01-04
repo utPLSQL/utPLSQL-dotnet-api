@@ -28,9 +28,12 @@ namespace utPLSQL
                              END;";
 
                 var cmd = new OracleCommand(proc, produceConnection);
+                runningCommands.Add(cmd);
+
                 cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
                 cmd.ExecuteNonQuery();
 
+                runningCommands.Remove(cmd);
                 cmd.Dispose();
             }
         }
@@ -73,11 +76,14 @@ namespace utPLSQL
                           END;";
 
                 var cmd = new OracleCommand(proc, produceConnection);
+                runningCommands.Add(cmd);
+
                 cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
                 cmd.Parameters.Add("coverage_id", OracleDbType.Varchar2, ParameterDirection.Input).Value = coverageReporterId;
 
                 cmd.ExecuteNonQuery();
 
+                runningCommands.Remove(cmd);
                 cmd.Dispose();
             }
         }
@@ -97,6 +103,8 @@ namespace utPLSQL
                          END;";
 
             var cmd = new OracleCommand(proc, consumeConnection);
+            runningCommands.Add(cmd);
+
             cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
             cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
 
@@ -115,6 +123,8 @@ namespace utPLSQL
             }
 
             reader.Close();
+
+            runningCommands.Remove(cmd);
             cmd.Dispose();
         }
     }
