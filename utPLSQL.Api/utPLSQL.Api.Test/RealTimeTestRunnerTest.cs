@@ -49,6 +49,18 @@ namespace utPLSQL
             System.Diagnostics.Trace.WriteLine(report);
         }
 
+
+        [TestMethod]
+        public void TestRunTestsAndAbort()
+        {
+            var testRunner = new RealTimeTestRunner();
+            testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
+
+            testRunner.RunTests(paths: "toscamtest");
+
+            testRunner.Close();
+        }
+
         [TestMethod]
         public void TestGetVersion()
         {
@@ -60,11 +72,11 @@ namespace utPLSQL
             Assert.AreEqual("v3.1.7.3096", version);
         }
 
-        [TestMethod]
+        // [TestMethod] Disabled
         public void TestGetVersionWhenNotInstalled()
         {
             var testRunner = new RealTimeTestRunner();
-            testRunner.Connect(username: "c##sakila", password: "sakila", database: "ORCLCDB");
+            testRunner.Connect(username: "sakila", password: "sakila", database: "ORCLPDB1");
 
             try
             {

@@ -18,6 +18,8 @@ namespace utPLSQL
         protected string realtimeReporterId;
         protected string coverageReporterId;
 
+        protected List<OracleCommand> runningCommands = new List<OracleCommand>();
+
         /// <summary>
         /// Connects to the database. 
         /// The TestRunner uses two connections. One for executing the tests and one for consuming the results
@@ -28,6 +30,11 @@ namespace utPLSQL
         public void Connect(string username, string password, string database)
         {
             var connectionString = $"User Id={username};Password={password};Data Source={database}";
+
+            foreach(OracleCommand command in runningCommands)
+            {
+                command.Cancel();
+            }
 
             produceConnection = new OracleConnection(connectionString);
             produceConnection.Open();
@@ -51,12 +58,16 @@ namespace utPLSQL
         public String GetVersion()
         {
             var cmd = new OracleCommand("select ut.version() from dual", produceConnection);
+            runningCommands.Add(cmd);
+
             OracleDataReader reader = cmd.ExecuteReader();
             reader.Read();
             
             var version = reader.GetString(0);
             
             reader.Close();
+
+            runningCommands.Remove(cmd);
             cmd.Dispose();
             
             return version;
@@ -108,6 +119,8 @@ namespace utPLSQL
                          END;";
 
             var cmd = new OracleCommand(proc, consumeConnection);
+            runningCommands.Add(cmd);
+
             cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = coverageReporterId;
             cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
 
@@ -123,6 +136,8 @@ namespace utPLSQL
             }
 
             reader.Close();
+
+            runningCommands.Remove(cmd);
             cmd.Dispose();
 
             return sb.ToString();
