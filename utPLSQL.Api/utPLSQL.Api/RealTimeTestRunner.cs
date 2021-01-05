@@ -19,9 +19,11 @@ namespace utPLSQL
             {
                 string realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                await UtRunAsync(realtimeReporterId, paths);
+                Task taskRun = UtRunAsync(realtimeReporterId, paths);
 
-                await ConsumeResultAsync(realtimeReporterId, consumer);
+                Task taskConsume = ConsumeResultAsync(realtimeReporterId, consumer);
+
+                await Task.WhenAll(taskRun, taskConsume);
             }
         }
 
@@ -37,9 +39,11 @@ namespace utPLSQL
                 string realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
                 string coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                await UtRunWithCoverageAsync(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects);
+                Task taskRun = UtRunWithCoverageAsync(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects);
 
-                await ConsumeResultAsync(realtimeReporterId, consumer);
+                Task taskConsume = ConsumeResultAsync(realtimeReporterId, consumer);
+
+                await Task.WhenAll(taskRun, taskConsume);
 
                 return await GetCoverageReportAsync(coverageReporterId);
             }

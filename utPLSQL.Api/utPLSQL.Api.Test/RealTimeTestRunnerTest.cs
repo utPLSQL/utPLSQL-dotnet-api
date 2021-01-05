@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Oracle.ManagedDataAccess.Client;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -52,7 +51,7 @@ namespace utPLSQL
 
             var events = new List<@event>();
 
-            string report = await testRunner.RunTestsWithCoverageAsync(path: "toscamtest", @event => { events.Add(@event); },
+            string report = await testRunner.RunTestsWithCoverageAsync(path: "toscamtest", consumer: @event => { events.Add(@event); },
                                                                        coverageSchema: "toscam", includeObjects: new List<string>() { "pa_m720", "pa_m770" });
 
             Assert.AreEqual("pre-run", events[0].type);
