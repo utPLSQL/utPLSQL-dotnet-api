@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace utPLSQL
@@ -12,39 +13,46 @@ namespace utPLSQL
     /// </summary>
     public class RealTimeTestRunner : TestRunner<@event>
     {
-        public override void RunTests(params string[] paths)
-        {
-            if (paths != null && paths.Length > 0)
-            {
-                realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
-
-                var proc = $@"DECLARE
-                               l_reporter ut_realtime_reporter := ut_realtime_reporter();
-                             BEGIN
-                               l_reporter.set_reporter_id(:id);
-                               l_reporter.output_buffer.init();
-                               ut_runner.run(a_paths => ut_varchar2_list({ConvertToUtVarchar2List(new List<string>(paths))}), 
-                                             a_reporters => ut_reporters(l_reporter));
-                             END;";
-
-                var cmd = new OracleCommand(proc, produceConnection);
-                runningCommands.Add(cmd);
-
-                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
-                cmd.ExecuteNonQuery();
-
-                runningCommands.Remove(cmd);
-                cmd.Dispose();
-            }
-        }
-
-        public override void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null)
+        public override async Task RunTestsAsync(List<string> paths, Action<@event> consumer)
         {
             if (paths != null && paths.Count > 0)
             {
-                realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
-                coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
+                string realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
+                await UtRunAsync(realtimeReporterId, paths);
+
+                await ConsumeResultAsync(realtimeReporterId, consumer);
+            }
+        }
+
+        public override async Task RunTestsAsync(string path, Action<@event> consumer)
+        {
+            await RunTestsAsync(new List<string>() { path }, consumer);
+        }
+
+        public override async Task<string> RunTestsWithCoverageAsync(List<string> paths, Action<@event> consumer, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null)
+        {
+            if (paths != null && paths.Count > 0)
+            {
+                string realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
+                string coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
+
+                await UtRunWithCoverageAsync(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects);
+
+                await ConsumeResultAsync(realtimeReporterId, consumer);
+
+                return await GetCoverageReportAsync(coverageReporterId);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private async Task UtRunWithCoverageAsync(string realtimeReporterId, string coverageReporterId, List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects)
+        {
+            await Task.Run(() =>
+            {
                 var proc = $@"DECLARE
                                l_rt_rep  ut_realtime_reporter      := ut_realtime_reporter();
                                l_cov_rep ut_coverage_html_reporter := ut_coverage_html_reporter();
@@ -85,47 +93,74 @@ namespace utPLSQL
 
                 runningCommands.Remove(cmd);
                 cmd.Dispose();
-            }
+            });
         }
 
-        public override void RunTestsWithCoverage(string path, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null)
+        public override async Task<string> RunTestsWithCoverageAsync(string path, Action<@event> consumer, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null)
         {
-            this.RunTestsWithCoverage(new List<string>() { path }, new List<string>() { coverageSchema }, includeObjects, excludeObjects);
+            return await RunTestsWithCoverageAsync(new List<string>() { path }, consumer, new List<string>() { coverageSchema }, includeObjects, excludeObjects);
         }
 
-        public override void ConsumeResult(Action<@event> action)
+        private async Task UtRunAsync(string id, List<string> paths)
         {
-            var proc = @"DECLARE
+            await Task.Run(() =>
+            {
+                var proc = $@"DECLARE
+                               l_reporter ut_realtime_reporter := ut_realtime_reporter();
+                             BEGIN
+                               l_reporter.set_reporter_id(:id);
+                               l_reporter.output_buffer.init();
+                               ut_runner.run(a_paths => ut_varchar2_list({ConvertToUtVarchar2List(new List<string>(paths))}), 
+                                             a_reporters => ut_reporters(l_reporter));
+                             END;";
+
+                var cmd = new OracleCommand(proc, produceConnection);
+                runningCommands.Add(cmd);
+
+                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
+                cmd.ExecuteNonQuery();
+
+                runningCommands.Remove(cmd);
+                cmd.Dispose();
+            });
+        }
+
+        private async Task ConsumeResultAsync(string id, Action<@event> action)
+        {
+            await Task.Run(() =>
+            {
+                var proc = @"DECLARE
                            l_reporter ut_realtime_reporter := ut_realtime_reporter();
                          BEGIN
                            l_reporter.set_reporter_id(:id);
                            :lines_cursor := l_reporter.get_lines_cursor();
                          END;";
 
-            var cmd = new OracleCommand(proc, consumeConnection);
-            runningCommands.Add(cmd);
+                var cmd = new OracleCommand(proc, consumeConnection);
+                runningCommands.Add(cmd);
 
-            cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
-            cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
+                cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
 
-            // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
-            cmd.InitialLOBFetchSize = -1;
+                // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
+                cmd.InitialLOBFetchSize = -1;
 
-            var reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                var xml = reader.GetString(0);
+                var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    var xml = reader.GetString(0);
 
-                var serializer = new XmlSerializer(typeof(@event));
-                var @event = (@event)serializer.Deserialize(new StringReader(xml));
+                    var serializer = new XmlSerializer(typeof(@event));
+                    var @event = (@event)serializer.Deserialize(new StringReader(xml));
 
-                action.Invoke(@event);
-            }
+                    action.Invoke(@event);
+                }
 
-            reader.Close();
+                reader.Close();
 
-            runningCommands.Remove(cmd);
-            cmd.Dispose();
+                runningCommands.Remove(cmd);
+                cmd.Dispose();
+            });
         }
     }
 }

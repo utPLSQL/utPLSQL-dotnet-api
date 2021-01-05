@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace utPLSQL
 {
@@ -15,9 +16,6 @@ namespace utPLSQL
         internal OracleConnection produceConnection;
         internal OracleConnection consumeConnection;
 
-        protected string realtimeReporterId;
-        protected string coverageReporterId;
-
         protected List<OracleCommand> runningCommands = new List<OracleCommand>();
 
         /// <summary>
@@ -27,11 +25,20 @@ namespace utPLSQL
         /// <param name="username">Database username</param>
         /// <param name="password">Database password</param>
         /// <param name="database">Database name</param>
-        public void Connect(string username, string password, string database)
+        /// <param name="connectAs">Connect as</param>
+        public void Connect(string username, string password, string database, string connectAs = null)
         {
-            var connectionString = $"User Id={username};Password={password};Data Source={database}";
+            string connectionString;
+            if (string.IsNullOrEmpty(connectAs))
+            {
+                connectionString = $"User Id={username};Password={password};Data Source={database}";
+            }
+            else
+            {
+                connectionString = $"User Id={username};DBA Privilege={connectAs};Password={password};Data Source={database}";
+            }
 
-            foreach(OracleCommand command in runningCommands)
+            foreach (OracleCommand command in runningCommands)
             {
                 command.Cancel();
             }
@@ -62,14 +69,14 @@ namespace utPLSQL
 
             OracleDataReader reader = cmd.ExecuteReader();
             reader.Read();
-            
+
             var version = reader.GetString(0);
-            
+
             reader.Close();
 
             runningCommands.Remove(cmd);
             cmd.Dispose();
-            
+
             return version;
         }
 
@@ -77,70 +84,79 @@ namespace utPLSQL
         /// Run tests
         /// </summary>
         /// <param name="paths">Path expressions</param>
-        public abstract void RunTests(params string[] paths);
+        /// <param name="consumer">Callback for each result</param>
+        public abstract Task RunTestsAsync(List<string> paths, Action<T> consumer);
+
+        /// <summary>
+        /// Run tests
+        /// </summary>
+        /// <param name="path">One single path expression</param>
+        /// <param name="consumer">Callback for each result</param>
+        public abstract Task RunTestsAsync(string path, Action<T> consumer);
 
         /// <summary>
         /// Run tests with coveage
         /// </summary>
         /// <param name="paths">List of path expressions</param>
+        /// <param name="consumer">Callback for each result</param>
         /// <param name="coverageSchemas">List of schemas to cover</param>
         /// <param name="includeObjects">List of objects to include</param>
         /// <param name="excludeObjects">List of objects to exclude</param>
-        public abstract void RunTestsWithCoverage(List<string> paths, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null);
+        /// <returns>Report as HTML</returns>
+        public abstract Task<string> RunTestsWithCoverageAsync(List<string> paths, Action<T> consumer, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null);
 
         /// <summary>
         /// Run tests with coveage
         /// </summary>
-        /// <param name="paths">The path</param>
+        /// <param name="path">The path</param>
+        /// <param name="consumer">Callback for each result</param>
         /// <param name="coverageSchema">The schemas to cover</param>
         /// <param name="includeObjects">List of objects to include</param>
         /// <param name="excludeObjects">List of objects to exclude</param>
-        public abstract void RunTestsWithCoverage(string path, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null);
+        /// <returns>Report as HTML</returns>
+        public abstract Task<string> RunTestsWithCoverageAsync(string path, Action<T> consumer, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null);
 
         /// <summary>
         /// Consumes the results and calls the callback action on each result
         /// </summary>
-        /// <param name="consumer">Typed action that will get the results</param>
-        public abstract void ConsumeResult(Action<T> consumer);
 
-        /// <summary>
-        /// Returns the HTML coverage report
-        /// </summary>
-        /// <returns>HTML coverage report</returns>
-        public string GetCoverageReport()
+        protected async Task<string> GetCoverageReportAsync(string id)
         {
-            var sb = new StringBuilder();
+            return await Task.Run(() =>
+            {
+                var sb = new StringBuilder();
 
-            var proc = @"DECLARE
+                var proc = @"DECLARE
                            l_reporter ut_coverage_html_reporter := ut_coverage_html_reporter();
                          BEGIN
                            l_reporter.set_reporter_id(:id);
                            :lines_cursor := l_reporter.get_lines_cursor();
                          END;";
 
-            var cmd = new OracleCommand(proc, consumeConnection);
-            runningCommands.Add(cmd);
+                var cmd = new OracleCommand(proc, consumeConnection);
+                runningCommands.Add(cmd);
 
-            cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = coverageReporterId;
-            cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
+                cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
 
-            // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
-            cmd.InitialLOBFetchSize = -1;
+                // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
+                cmd.InitialLOBFetchSize = -1;
 
-            var reader = cmd.ExecuteReader();
+                var reader = cmd.ExecuteReader();
 
-            while (reader.Read())
-            {
-                var line = reader.GetString(0);
-                sb.Append(line);
-            }
+                while (reader.Read())
+                {
+                    var line = reader.GetString(0);
+                    sb.Append(line);
+                }
 
-            reader.Close();
+                reader.Close();
 
-            runningCommands.Remove(cmd);
-            cmd.Dispose();
+                runningCommands.Remove(cmd);
+                cmd.Dispose();
 
-            return sb.ToString();
+                return sb.ToString();
+            });
         }
 
         protected string ConvertToUtVarchar2List(List<string> elements)

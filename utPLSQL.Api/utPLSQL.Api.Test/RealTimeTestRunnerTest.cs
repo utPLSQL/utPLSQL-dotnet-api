@@ -1,7 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Oracle.ManagedDataAccess.Client;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace utPLSQL
 {
@@ -9,15 +11,13 @@ namespace utPLSQL
     public class RealTimeTestRunnerTest
     {
         [TestMethod]
-        public void TestRunTests()
+        public async Task TestRunTests()
         {
             var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-            testRunner.RunTests(paths: "toscamtest");
-
             var events = new List<@event>();
-            testRunner.ConsumeResult(@event =>
+            await testRunner.RunTestsAsync("toscamtest", @event =>
             {
                 events.Add(@event);
             });
@@ -27,24 +27,36 @@ namespace utPLSQL
         }
 
         [TestMethod]
-        public void TestRunTestsWithCoverage()
+        public async Task TestConnectAsAsync()
+        {
+            var testRunner = new RealTimeTestRunner();
+            testRunner.Connect(username: "sys", password: "Oradoc_db1", database: "ORCLPDB1", connectAs: "SYSDBA");
+
+            try
+            {
+                await testRunner.RunTestsAsync("toscamtest", @event => { });
+
+                Assert.Fail();
+            }
+            catch (OracleException e)
+            {
+                Assert.IsTrue(e.Message.StartsWith("ORA-06598"));
+            }
+        }
+
+        [TestMethod]
+        public async Task TestRunTestsWithCoverageAsync()
         {
             var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-            testRunner.RunTestsWithCoverage(path: "toscamtest", coverageSchema: "toscam",
-                                            includeObjects: new List<string>() { "pa_m720", "pa_m770" });
-
             var events = new List<@event>();
-            testRunner.ConsumeResult(@event =>
-            {
-                events.Add(@event);
-            });
+
+            string report = await testRunner.RunTestsWithCoverageAsync(path: "toscamtest", @event => { events.Add(@event); },
+                                                                       coverageSchema: "toscam", includeObjects: new List<string>() { "pa_m720", "pa_m770" });
 
             Assert.AreEqual("pre-run", events[0].type);
             Assert.AreEqual("post-run", events.Last().type);
-
-            var report = testRunner.GetCoverageReport();
 
             System.Diagnostics.Trace.WriteLine(report);
         }
@@ -56,9 +68,20 @@ namespace utPLSQL
             var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-            testRunner.RunTests(paths: "toscamtest");
+            testRunner.RunTestsAsync("toscamtest", @event => { });
 
             testRunner.Close();
+        }
+
+        [TestMethod]
+        public async Task TestRunTestsTwoTimesAsync()
+        {
+            var testRunner = new RealTimeTestRunner();
+            testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
+
+            testRunner.RunTestsAsync("toscamtest", @event => { });
+
+            await testRunner.RunTestsAsync("toscamtest", @event => { });
         }
 
         [TestMethod]
