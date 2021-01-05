@@ -9,10 +9,9 @@
     testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
     // Runs tests for the user tosamtest
-    testRunner.RunTests(paths: "toscamtest");
-
     var events = new List<@event>();
-    testRunner.ConsumeResult(@event =>
+
+    await testRunner.RunTestsAsync("toscamtest", @event =>
     {
         events.Add(@event);
     });
@@ -22,21 +21,15 @@
     var testRunner = new RealTimeTestRunner();
     testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-    // Runs tests for the user tosamtest with coverage 
-    testRunner.RunTestsWithCoverage(path: "toscamtest",
-                                    coverageSchema: "toscam",
-                                    includeObjects: new List<string>() { "pa_m720", "pa_m770" },
-                                    excludeObjects: null);
-
     var events = new List<@event>();
-    testRunner.ConsumeResult(@event =>
-    {
-        events.Add(@event);
-    });
 
-    var report = testRunner.GetCoverageReport();
+    string htmlReport = await testRunner.RunTestsWithCoverageAsync(path: "toscamtest", 
+                                                                  @event => { events.Add(@event); },
+                                                                  coverageSchema: "toscam", 
+                                                                  includeObjects: new List<string>() { "pa_m720", "pa_m770" });
 
 ## Releases
+
 Releases are published to nuGet: https://www.nuget.org/packages/utPLSQL.Api/
 
 ## Issues
