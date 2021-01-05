@@ -24,9 +24,9 @@
     var events = new List<@event>();
 
     string htmlReport = await testRunner.RunTestsWithCoverageAsync(path: "toscamtest", 
-                                                                  consumer: @event => { events.Add(@event); },
-                                                                  coverageSchema: "toscam", 
-                                                                  includeObjects: new List<string>() { "pa_m720", "pa_m770" });
+                                             consumer: @event => { events.Add(@event); },
+                                             coverageSchema: "toscam", 
+                                             includeObjects: new List<string>() { "pa_m720", "pa_m770" });
 
 ## Releases
 
