@@ -116,10 +116,6 @@ namespace utPLSQL
         /// <returns>Report as HTML</returns>
         public abstract Task<string> RunTestsWithCoverageAsync(string path, Action<T> consumer, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null);
 
-        /// <summary>
-        /// Consumes the results and calls the callback action on each result
-        /// </summary>
-
         protected async Task<string> GetCoverageReportAsync(string id)
         {
             return await Task.Run(() =>

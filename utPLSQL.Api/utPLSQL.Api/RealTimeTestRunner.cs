@@ -43,14 +43,21 @@ namespace utPLSQL
 
                 Task taskConsume = ConsumeResultAsync(realtimeReporterId, consumer);
 
-                await Task.WhenAll(taskRun, taskConsume);
+                Task<string> taskCoverateReport = GetCoverageReportAsync(coverageReporterId);
 
-                return await GetCoverageReportAsync(coverageReporterId);
+                await Task.WhenAll(taskRun, taskConsume, taskCoverateReport);
+
+                return taskCoverateReport.Result;
             }
             else
             {
                 return null;
             }
+        }
+
+        public override async Task<string> RunTestsWithCoverageAsync(string path, Action<@event> consumer, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null)
+        {
+            return await RunTestsWithCoverageAsync(new List<string>() { path }, consumer, new List<string>() { coverageSchema }, includeObjects, excludeObjects);
         }
 
         private async Task UtRunWithCoverageAsync(string realtimeReporterId, string coverageReporterId, List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects)
@@ -98,11 +105,6 @@ namespace utPLSQL
                 runningCommands.Remove(cmd);
                 cmd.Dispose();
             });
-        }
-
-        public override async Task<string> RunTestsWithCoverageAsync(string path, Action<@event> consumer, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null)
-        {
-            return await RunTestsWithCoverageAsync(new List<string>() { path }, consumer, new List<string>() { coverageSchema }, includeObjects, excludeObjects);
         }
 
         private async Task UtRunAsync(string id, List<string> paths)

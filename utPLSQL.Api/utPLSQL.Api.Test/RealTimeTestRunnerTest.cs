@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
 using Oracle.ManagedDataAccess.Client;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +10,23 @@ namespace utPLSQL
     [TestClass]
     public class RealTimeTestRunnerTest
     {
+        private RealTimeTestRunner testRunner;
+
+        [TestInitialize]
+        public void Before()
+        {
+            testRunner = new RealTimeTestRunner();
+        }
+
+        [TestCleanup]
+        public void After()
+        {
+            testRunner.Close();
+        }
+
         [TestMethod]
         public async Task TestRunTests()
         {
-            var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
             var events = new List<@event>();
@@ -26,9 +40,8 @@ namespace utPLSQL
         }
 
         [TestMethod]
-        public async Task TestConnectAsAsync()
+        public async Task TestConnectAs()
         {
-            var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "sys", password: "Oradoc_db1", database: "ORCLPDB1", connectAs: "SYSDBA");
 
             try
@@ -44,9 +57,8 @@ namespace utPLSQL
         }
 
         [TestMethod]
-        public async Task TestRunTestsWithCoverageAsync()
+        public async Task TestRunTestsWithCoverage()
         {
-            var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
             var events = new List<@event>();
@@ -57,25 +69,21 @@ namespace utPLSQL
             Assert.AreEqual("pre-run", events[0].type);
             Assert.AreEqual("post-run", events.Last().type);
 
-            System.Diagnostics.Trace.WriteLine(report);
+            Logger.LogMessage(report);
         }
 
 
         [TestMethod]
         public void TestRunTestsAndAbort()
         {
-            var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
             testRunner.RunTestsAsync("toscamtest", @event => { });
-
-            testRunner.Close();
         }
 
         [TestMethod]
-        public async Task TestRunTestsTwoTimesAsync()
+        public async Task TestRunTestsTwoTimes()
         {
-            var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
             testRunner.RunTestsAsync("toscamtest", @event => { });
@@ -86,7 +94,6 @@ namespace utPLSQL
         [TestMethod]
         public void TestGetVersion()
         {
-            var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
             string version = testRunner.GetVersion();
@@ -97,7 +104,6 @@ namespace utPLSQL
         // [TestMethod] Disabled
         public void TestGetVersionWhenNotInstalled()
         {
-            var testRunner = new RealTimeTestRunner();
             testRunner.Connect(username: "sakila", password: "sakila", database: "ORCLPDB1");
 
             try
