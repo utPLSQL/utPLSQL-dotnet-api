@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
 using Oracle.ManagedDataAccess.Client;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,96 +10,122 @@ namespace utPLSQL
     [TestClass]
     public class RealTimeTestRunnerTest
     {
+
         [TestMethod]
         public async Task TestRunTests()
         {
             var testRunner = new RealTimeTestRunner();
-            testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
+
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
 
             var events = new List<@event>();
-            await testRunner.RunTestsAsync("toscamtest", @event =>
+            await testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
             {
                 events.Add(@event);
             });
 
             Assert.AreEqual("pre-run", events[0].type);
             Assert.AreEqual("post-run", events.Last().type);
+
+            testRunner.Close();
         }
 
         [TestMethod]
-        public async Task TestConnectAsAsync()
+        public async Task TestConnectAs()
         {
             var testRunner = new RealTimeTestRunner();
-            testRunner.Connect(username: "sys", password: "Oradoc_db1", database: "ORCLPDB1", connectAs: "SYSDBA");
+
+            testRunner.Connect(username: "sys", password: "Oradoc_db1", database: "orclpdb1", connectAs: "sysdba");
 
             try
             {
-                await testRunner.RunTestsAsync("toscamtest", @event => { });
+                await testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event => { });
 
                 Assert.Fail();
             }
             catch (OracleException e)
             {
                 Assert.IsTrue(e.Message.StartsWith("ORA-06598"));
+
+                testRunner.Close();
             }
         }
 
         [TestMethod]
-        public async Task TestRunTestsWithCoverageAsync()
+        public async Task TestRunTestsWithCoverage()
         {
             var testRunner = new RealTimeTestRunner();
-            testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
+
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
 
             var events = new List<@event>();
 
-            string report = await testRunner.RunTestsWithCoverageAsync(path: "toscamtest", consumer: @event => { events.Add(@event); },
-                                                                       coverageSchema: "toscam", includeObjects: new List<string>() { "pa_m720", "pa_m770" });
+            string report = await testRunner.RunTestsWithCoverageAsync(path: "ut3_tester.test_ut_test", consumer: @event => { events.Add(@event); },
+                                                                       coverageSchema: "ut3_develop", includeObjects: new List<string>() { "ut_test" });
+            Logger.LogMessage(report);
 
             Assert.AreEqual("pre-run", events[0].type);
             Assert.AreEqual("post-run", events.Last().type);
-
-            System.Diagnostics.Trace.WriteLine(report);
-        }
-
-
-        [TestMethod]
-        public void TestRunTestsAndAbort()
-        {
-            var testRunner = new RealTimeTestRunner();
-            testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
-
-            testRunner.RunTestsAsync("toscamtest", @event => { });
 
             testRunner.Close();
         }
 
         [TestMethod]
-        public async Task TestRunTestsTwoTimesAsync()
+        public void TestRunTestsAndAbort()
         {
             var testRunner = new RealTimeTestRunner();
-            testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
 
-            testRunner.RunTestsAsync("toscamtest", @event => { });
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
 
-            await testRunner.RunTestsAsync("toscamtest", @event => { });
+            testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event => { });
+
+            testRunner.Close();
+        }
+
+        [TestMethod]
+        public async Task TestRunTestsTwoTimes()
+        {
+            var testRunner = new RealTimeTestRunner();
+
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+
+            var events1 = new List<@event>();
+            Task task1 = testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
+            {
+                events1.Add(@event);
+            });
+
+            var events2 = new List<@event>();
+            Task task2 = testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
+             {
+                 events2.Add(@event);
+             });
+
+            await Task.WhenAll(task1, task2);
+
+            testRunner.Close();
         }
 
         [TestMethod]
         public void TestGetVersion()
         {
             var testRunner = new RealTimeTestRunner();
-            testRunner.Connect(username: "toscamtest", password: "toscamtest", database: "CA40");
+
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
 
             string version = testRunner.GetVersion();
 
-            Assert.AreEqual("v3.1.7.3096", version);
+            Assert.AreEqual("v3.1.11.3469-develop", version);
+
+            testRunner.Close();
         }
 
         // [TestMethod] Disabled
         public void TestGetVersionWhenNotInstalled()
         {
             var testRunner = new RealTimeTestRunner();
-            testRunner.Connect(username: "sakila", password: "sakila", database: "ORCLPDB1");
+
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
 
             try
             {
@@ -108,6 +135,8 @@ namespace utPLSQL
             catch (OracleException e)
             {
                 Assert.AreEqual("ORA-00904: \"UT\".\"VERSION\": ungültige ID", e.Message);
+
+                testRunner.Close();
             }
         }
     }

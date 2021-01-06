@@ -116,47 +116,40 @@ namespace utPLSQL
         /// <returns>Report as HTML</returns>
         public abstract Task<string> RunTestsWithCoverageAsync(string path, Action<T> consumer, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null);
 
-        /// <summary>
-        /// Consumes the results and calls the callback action on each result
-        /// </summary>
-
-        protected async Task<string> GetCoverageReportAsync(string id)
+        protected string GetCoverageReport(string id)
         {
-            return await Task.Run(() =>
-            {
-                var sb = new StringBuilder();
+            var sb = new StringBuilder();
 
-                var proc = @"DECLARE
+            var proc = @"DECLARE
                            l_reporter ut_coverage_html_reporter := ut_coverage_html_reporter();
                          BEGIN
                            l_reporter.set_reporter_id(:id);
                            :lines_cursor := l_reporter.get_lines_cursor();
                          END;";
 
-                var cmd = new OracleCommand(proc, consumeConnection);
-                runningCommands.Add(cmd);
+            var cmd = new OracleCommand(proc, consumeConnection);
+            runningCommands.Add(cmd);
 
-                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
-                cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+            cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
+            cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
 
-                // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
-                cmd.InitialLOBFetchSize = -1;
+            // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
+            cmd.InitialLOBFetchSize = -1;
 
-                var reader = cmd.ExecuteReader();
+            var reader = cmd.ExecuteReader();
 
-                while (reader.Read())
-                {
-                    var line = reader.GetString(0);
-                    sb.Append(line);
-                }
+            while (reader.Read())
+            {
+                var line = reader.GetString(0);
+                sb.Append(line);
+            }
 
-                reader.Close();
+            reader.Close();
 
-                runningCommands.Remove(cmd);
-                cmd.Dispose();
+            runningCommands.Remove(cmd);
+            cmd.Dispose();
 
-                return sb.ToString();
-            });
+            return sb.ToString();
         }
 
         protected string ConvertToUtVarchar2List(List<string> elements)
