@@ -19,9 +19,8 @@ namespace utPLSQL
             {
                 string realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                Task taskRun = UtRunAsync(realtimeReporterId, paths);
-
-                Task taskConsume = ConsumeResultAsync(realtimeReporterId, consumer);
+                Task taskRun = Task.Run(() => { UtRun(realtimeReporterId, paths); });
+                Task taskConsume = Task.Run(() => { ConsumeResult(realtimeReporterId, consumer); });
 
                 await Task.WhenAll(taskRun, taskConsume);
             }
@@ -39,11 +38,9 @@ namespace utPLSQL
                 string realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
                 string coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                Task taskRun = UtRunWithCoverageAsync(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects);
-
-                Task taskConsume = ConsumeResultAsync(realtimeReporterId, consumer);
-
-                Task<string> taskCoverateReport = GetCoverageReportAsync(coverageReporterId);
+                Task taskRun = Task.Run(() => { UtRunWithCoverage(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects); });
+                Task taskConsume = Task.Run(() => { ConsumeResult(realtimeReporterId, consumer); });
+                Task<string> taskCoverateReport = Task.Run(() => { return GetCoverageReport(coverageReporterId); });
 
                 await Task.WhenAll(taskRun, taskConsume, taskCoverateReport);
 
@@ -60,11 +57,9 @@ namespace utPLSQL
             return await RunTestsWithCoverageAsync(new List<string>() { path }, consumer, new List<string>() { coverageSchema }, includeObjects, excludeObjects);
         }
 
-        private async Task UtRunWithCoverageAsync(string realtimeReporterId, string coverageReporterId, List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects)
+        private void UtRunWithCoverage(string realtimeReporterId, string coverageReporterId, List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects)
         {
-            await Task.Run(() =>
-            {
-                var proc = $@"DECLARE
+            var proc = $@"DECLARE
                                l_rt_rep  ut_realtime_reporter      := ut_realtime_reporter();
                                l_cov_rep ut_coverage_html_reporter := ut_coverage_html_reporter();
                              BEGIN
@@ -75,43 +70,40 @@ namespace utPLSQL
                                sys.dbms_output.enable(NULL);
                                ut_runner.run(a_paths => ut_varchar2_list({ConvertToUtVarchar2List(paths)}), ";
 
-                if (coverageSchemas != null && coverageSchemas.Count > 0)
-                {
-                    proc += $"a_coverage_schemes => ut_varchar2_list({ConvertToUtVarchar2List(coverageSchemas)}), ";
-                }
+            if (coverageSchemas != null && coverageSchemas.Count > 0)
+            {
+                proc += $"a_coverage_schemes => ut_varchar2_list({ConvertToUtVarchar2List(coverageSchemas)}), ";
+            }
 
-                if (includeObjects != null && includeObjects.Count > 0)
-                {
-                    proc += $"a_include_objects => ut_varchar2_list({ConvertToUtVarchar2List(includeObjects)}), ";
-                }
+            if (includeObjects != null && includeObjects.Count > 0)
+            {
+                proc += $"a_include_objects => ut_varchar2_list({ConvertToUtVarchar2List(includeObjects)}), ";
+            }
 
-                if (excludeObjects != null && excludeObjects.Count > 0)
-                {
-                    proc += $"a_exclude_objects => ut_varchar2_list({ConvertToUtVarchar2List(excludeObjects)}), ";
-                }
+            if (excludeObjects != null && excludeObjects.Count > 0)
+            {
+                proc += $"a_exclude_objects => ut_varchar2_list({ConvertToUtVarchar2List(excludeObjects)}), ";
+            }
 
-                proc += @"  a_reporters => ut_reporters(l_rt_rep, l_cov_rep)); 
+            proc += @"  a_reporters => ut_reporters(l_rt_rep, l_cov_rep)); 
                             sys.dbms_output.disable; 
                           END;";
 
-                var cmd = new OracleCommand(proc, produceConnection);
-                runningCommands.Add(cmd);
+            var cmd = new OracleCommand(proc, produceConnection);
+            runningCommands.Add(cmd);
 
-                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
-                cmd.Parameters.Add("coverage_id", OracleDbType.Varchar2, ParameterDirection.Input).Value = coverageReporterId;
+            cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = realtimeReporterId;
+            cmd.Parameters.Add("coverage_id", OracleDbType.Varchar2, ParameterDirection.Input).Value = coverageReporterId;
 
-                cmd.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
 
-                runningCommands.Remove(cmd);
-                cmd.Dispose();
-            });
+            runningCommands.Remove(cmd);
+            cmd.Dispose();
         }
 
-        private async Task UtRunAsync(string id, List<string> paths)
+        private void UtRun(string id, List<string> paths)
         {
-            await Task.Run(() =>
-            {
-                var proc = $@"DECLARE
+            var proc = $@"DECLARE
                                l_reporter ut_realtime_reporter := ut_realtime_reporter();
                              BEGIN
                                l_reporter.set_reporter_id(:id);
@@ -120,53 +112,49 @@ namespace utPLSQL
                                              a_reporters => ut_reporters(l_reporter));
                              END;";
 
-                var cmd = new OracleCommand(proc, produceConnection);
-                runningCommands.Add(cmd);
+            var cmd = new OracleCommand(proc, produceConnection);
+            runningCommands.Add(cmd);
 
-                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
-                cmd.ExecuteNonQuery();
+            cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
+            cmd.ExecuteNonQuery();
 
-                runningCommands.Remove(cmd);
-                cmd.Dispose();
-            });
+            runningCommands.Remove(cmd);
+            cmd.Dispose();
         }
 
-        private async Task ConsumeResultAsync(string id, Action<@event> action)
+        private void ConsumeResult(string id, Action<@event> action)
         {
-            await Task.Run(() =>
-            {
-                var proc = @"DECLARE
+            var proc = @"DECLARE
                            l_reporter ut_realtime_reporter := ut_realtime_reporter();
                          BEGIN
                            l_reporter.set_reporter_id(:id);
                            :lines_cursor := l_reporter.get_lines_cursor();
                          END;";
 
-                var cmd = new OracleCommand(proc, consumeConnection);
-                runningCommands.Add(cmd);
+            var cmd = new OracleCommand(proc, consumeConnection);
+            runningCommands.Add(cmd);
 
-                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
-                cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+            cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
+            cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
 
-                // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
-                cmd.InitialLOBFetchSize = -1;
+            // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
+            cmd.InitialLOBFetchSize = -1;
 
-                var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                {
-                    var xml = reader.GetString(0);
+            var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var xml = reader.GetString(0);
 
-                    var serializer = new XmlSerializer(typeof(@event));
-                    var @event = (@event)serializer.Deserialize(new StringReader(xml));
+                var serializer = new XmlSerializer(typeof(@event));
+                var @event = (@event)serializer.Deserialize(new StringReader(xml));
 
-                    action.Invoke(@event);
-                }
+                action.Invoke(@event);
+            }
 
-                reader.Close();
+            reader.Close();
 
-                runningCommands.Remove(cmd);
-                cmd.Dispose();
-            });
+            runningCommands.Remove(cmd);
+            cmd.Dispose();
         }
     }
 }
