@@ -16,7 +16,7 @@ namespace utPLSQL
         internal OracleConnection produceConnection;
         internal OracleConnection consumeConnection;
 
-        protected List<OracleCommand> runningCommands = new List<OracleCommand>();
+        protected readonly List<OracleCommand> runningCommands = new List<OracleCommand>();
 
         /// <summary>
         /// Connects to the database. 
@@ -38,7 +38,7 @@ namespace utPLSQL
                 connectionString = $"User Id={username};DBA Privilege={connectAs};Password={password};Data Source={database}";
             }
 
-            foreach (OracleCommand command in runningCommands)
+            foreach (var command in runningCommands)
             {
                 command.Cancel();
             }
@@ -62,7 +62,7 @@ namespace utPLSQL
         /// Returns the installed utPLSQL version
         /// </summary>
         /// <returns>Version as string</returns>
-        public String GetVersion()
+        public string GetVersion()
         {
             var cmd = new OracleCommand("select ut.version() from dual", produceConnection);
             runningCommands.Add(cmd);
@@ -155,7 +155,7 @@ namespace utPLSQL
         protected string ConvertToUtVarchar2List(List<string> elements)
         {
             var sb = new StringBuilder();
-            bool first = true;
+            var first = true;
             foreach (var element in elements)
             {
                 if (!first)

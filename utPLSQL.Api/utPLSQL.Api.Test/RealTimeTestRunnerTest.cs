@@ -113,7 +113,7 @@ namespace utPLSQL
 
             testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
 
-            string version = testRunner.GetVersion();
+            var version = testRunner.GetVersion();
 
             Assert.AreEqual("v3.1.11.3469-develop", version);
 
@@ -129,7 +129,7 @@ namespace utPLSQL
 
             try
             {
-                string version = testRunner.GetVersion();
+                var version = testRunner.GetVersion();
                 Assert.Fail();
             }
             catch (OracleException e)

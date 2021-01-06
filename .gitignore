@@ -3,5 +3,6 @@
 **/packages
 **/**/bin
 **/**/obj
-/.idea/
+**/.idea/
 **/**/*.nupkg
+**/utPLSQL.Api.sln.DotSettings.user
