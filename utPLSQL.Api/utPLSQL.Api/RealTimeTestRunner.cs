@@ -28,7 +28,7 @@ namespace utPLSQL
 
         public override async Task RunTestsAsync(string path, Action<@event> consumer)
         {
-            await RunTestsAsync(new List<string>() { path }, consumer);
+            await RunTestsAsync(new List<string> { path }, consumer);
         }
 
         public override async Task<string> RunTestsWithCoverageAsync(List<string> paths, Action<@event> consumer, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null)
@@ -54,7 +54,7 @@ namespace utPLSQL
 
         public override async Task<string> RunTestsWithCoverageAsync(string path, Action<@event> consumer, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null)
         {
-            return await RunTestsWithCoverageAsync(new List<string>() { path }, consumer, new List<string>() { coverageSchema }, includeObjects, excludeObjects);
+            return await RunTestsWithCoverageAsync(new List<string> { path }, consumer, new List<string> { coverageSchema }, includeObjects, excludeObjects);
         }
 
         private void UtRunWithCoverage(string realtimeReporterId, string coverageReporterId, List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects)

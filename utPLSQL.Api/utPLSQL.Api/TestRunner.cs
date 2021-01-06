@@ -13,8 +13,8 @@ namespace utPLSQL
     /// <typeparam name="T">Type of result class used in callback action</typeparam>
     public abstract class TestRunner<T>
     {
-        internal OracleConnection produceConnection;
-        internal OracleConnection consumeConnection;
+        protected OracleConnection produceConnection;
+        protected OracleConnection consumeConnection;
 
         protected readonly List<OracleCommand> runningCommands = new List<OracleCommand>();
 
@@ -67,7 +67,7 @@ namespace utPLSQL
             var cmd = new OracleCommand("select ut.version() from dual", produceConnection);
             runningCommands.Add(cmd);
 
-            OracleDataReader reader = cmd.ExecuteReader();
+            var reader = cmd.ExecuteReader();
             reader.Read();
 
             var version = reader.GetString(0);
