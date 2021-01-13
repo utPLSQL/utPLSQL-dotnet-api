@@ -16,7 +16,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "xepdb1");
 
             var events = new List<@event>();
             await testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
@@ -35,7 +35,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "sys", password: "Oradoc_db1", database: "orclpdb1", connectAs: "sysdba");
+            testRunner.Connect(username: "sys", password: "oracle", database: "xepdb1", connectAs: "sysdba");
 
             try
             {
@@ -56,7 +56,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "xepdb1");
 
             var events = new List<@event>();
 
@@ -75,7 +75,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "xepdb1");
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event => { });
@@ -89,7 +89,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "xepdb1");
 
             var events1 = new List<@event>();
             Task task1 = testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
@@ -113,7 +113,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "xepdb1");
 
             var version = testRunner.GetVersion();
 
@@ -127,7 +127,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "xepdb1");
 
             try
             {
