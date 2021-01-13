@@ -49,6 +49,7 @@ namespace utPLSQL
             consumeConnection = new OracleConnection(connectionString);
             consumeConnection.Open();
         }
+        
         /// <summary>
         /// Closes both connections
         /// </summary>
