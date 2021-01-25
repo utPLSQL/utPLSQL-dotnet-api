@@ -55,8 +55,25 @@ namespace utPLSQL
         /// </summary>
         public void Close()
         {
-            produceConnection?.Close();
-            consumeConnection?.Close();
+            if (produceConnection != null)
+            {
+                try { 
+                produceConnection.Close();
+                }
+                catch
+                {
+                }
+            }
+            if (consumeConnection != null)
+            {
+                try
+                {
+                    consumeConnection.Close();
+                }
+                catch
+                {
+                }
+            }
         }
 
         /// <summary>
