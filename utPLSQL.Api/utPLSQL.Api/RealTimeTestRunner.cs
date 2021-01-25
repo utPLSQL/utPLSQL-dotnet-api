@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -15,14 +16,25 @@ namespace utPLSQL
     {
         public override async Task RunTestsAsync(List<string> paths, Action<@event> consumer)
         {
-            if (paths != null && paths.Count > 0)
+            try
             {
-                var realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
+                if (paths != null && paths.Count > 0)
+                {
+                    var realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                var taskRun = Task.Run(() => UtRun(realtimeReporterId, paths));
-                var taskConsume = Task.Run(() => ConsumeResult(realtimeReporterId, consumer));
+                    var taskRun = Task.Run(() => UtRun(realtimeReporterId, paths));
+                    var taskConsume = Task.Run(() => ConsumeResult(realtimeReporterId, consumer));
 
-                await Task.WhenAll(taskRun, taskConsume);
+                    await Task.WhenAll(taskRun, taskConsume);
+                }
+            }
+            catch (Exception e)
+            {
+                using (EventLog eventLog = new EventLog("Application"))
+                {
+                    eventLog.Source = "Application";
+                    eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
+                }
             }
         }
 
@@ -33,21 +45,33 @@ namespace utPLSQL
 
         public override async Task<string> RunTestsWithCoverageAsync(List<string> paths, Action<@event> consumer, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null)
         {
-            if (paths != null && paths.Count > 0)
+            try
             {
-                var realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
-                var coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
+                if (paths != null && paths.Count > 0)
+                {
+                    var realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
+                    var coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                var taskRun = Task.Run(() => UtRunWithCoverage(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects));
-                var taskConsume = Task.Run(() => ConsumeResult(realtimeReporterId, consumer));
-                var taskCoverageReport = Task.Run(() => GetCoverageReport(coverageReporterId));
+                    var taskRun = Task.Run(() => UtRunWithCoverage(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects));
+                    var taskConsume = Task.Run(() => ConsumeResult(realtimeReporterId, consumer));
+                    var taskCoverageReport = Task.Run(() => GetCoverageReport(coverageReporterId));
 
-                await Task.WhenAll(taskRun, taskConsume, taskCoverageReport);
+                    await Task.WhenAll(taskRun, taskConsume, taskCoverageReport);
 
-                return taskCoverageReport.Result;
+                    return taskCoverageReport.Result;
+                }
+                else
+                {
+                    return null;
+                }
             }
-            else
+            catch (Exception e)
             {
+                using (EventLog eventLog = new EventLog("Application"))
+                {
+                    eventLog.Source = "Application";
+                    eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
+                }
                 return null;
             }
         }

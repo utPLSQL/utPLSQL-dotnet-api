@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -28,28 +29,39 @@ namespace utPLSQL
         /// <param name="connectAs">Connect as</param>
         public void Connect(string username, string password, string database, string connectAs = null)
         {
-            string connectionString;
-            if (string.IsNullOrEmpty(connectAs))
+            try
             {
-                connectionString = $"User Id={username};Password={password};Data Source={database}";
+                string connectionString;
+                if (string.IsNullOrEmpty(connectAs))
+                {
+                    connectionString = $"User Id={username};Password={password};Data Source={database}";
+                }
+                else
+                {
+                    connectionString = $"User Id={username};DBA Privilege={connectAs};Password={password};Data Source={database}";
+                }
+
+                foreach (var command in runningCommands)
+                {
+                    command.Cancel();
+                }
+
+                produceConnection = new OracleConnection(connectionString);
+                produceConnection.Open();
+
+                consumeConnection = new OracleConnection(connectionString);
+                consumeConnection.Open();
             }
-            else
+            catch (Exception e)
             {
-                connectionString = $"User Id={username};DBA Privilege={connectAs};Password={password};Data Source={database}";
+                using (EventLog eventLog = new EventLog("Application"))
+                {
+                    eventLog.Source = "Application";
+                    eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
+                }
             }
-
-            foreach (var command in runningCommands)
-            {
-                command.Cancel();
-            }
-
-            produceConnection = new OracleConnection(connectionString);
-            produceConnection.Open();
-
-            consumeConnection = new OracleConnection(connectionString);
-            consumeConnection.Open();
         }
-        
+
         /// <summary>
         /// Closes both connections
         /// </summary>
@@ -62,11 +74,17 @@ namespace utPLSQL
 
             if (produceConnection != null)
             {
-                try { 
-                produceConnection.Close();
-                }
-                catch
+                try
                 {
+                    produceConnection.Close();
+                }
+                catch (Exception e)
+                {
+                    using (EventLog eventLog = new EventLog("Application"))
+                    {
+                        eventLog.Source = "Application";
+                        eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
+                    }
                 }
             }
             if (consumeConnection != null)
@@ -75,8 +93,13 @@ namespace utPLSQL
                 {
                     consumeConnection.Close();
                 }
-                catch
+                catch (Exception e)
                 {
+                    using (EventLog eventLog = new EventLog("Application"))
+                    {
+                        eventLog.Source = "Application";
+                        eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
+                    }
                 }
             }
         }
@@ -87,20 +110,31 @@ namespace utPLSQL
         /// <returns>Version as string</returns>
         public string GetVersion()
         {
-            var cmd = new OracleCommand("select ut.version() from dual", produceConnection);
-            runningCommands.Add(cmd);
+            try
+            {
+                var cmd = new OracleCommand("select ut.version() from dual", produceConnection);
+                runningCommands.Add(cmd);
 
-            var reader = cmd.ExecuteReader();
-            reader.Read();
+                var reader = cmd.ExecuteReader();
+                reader.Read();
 
-            var version = reader.GetString(0);
+                var version = reader.GetString(0);
 
-            reader.Close();
+                reader.Close();
 
-            runningCommands.Remove(cmd);
-            cmd.Dispose();
+                runningCommands.Remove(cmd);
+                cmd.Dispose();
 
-            return version;
+                return version;
+            }
+            catch (Exception e)
+            {
+                using (EventLog eventLog = new EventLog("Application"))
+                {
+                    eventLog.Source = "Application";
+                    eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
+                }
+            }
         }
 
         /// <summary>
@@ -141,38 +175,49 @@ namespace utPLSQL
 
         protected string GetCoverageReport(string id)
         {
-            var sb = new StringBuilder();
+            try
+            {
+                var sb = new StringBuilder();
 
-            var proc = @"DECLARE
+                var proc = @"DECLARE
                            l_reporter ut_coverage_html_reporter := ut_coverage_html_reporter();
                          BEGIN
                            l_reporter.set_reporter_id(:id);
                            :lines_cursor := l_reporter.get_lines_cursor();
                          END;";
 
-            var cmd = new OracleCommand(proc, consumeConnection);
-            runningCommands.Add(cmd);
+                var cmd = new OracleCommand(proc, consumeConnection);
+                runningCommands.Add(cmd);
 
-            cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
-            cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add("id", OracleDbType.Varchar2, ParameterDirection.Input).Value = id;
+                cmd.Parameters.Add("lines_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
 
-            // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
-            cmd.InitialLOBFetchSize = -1;
+                // https://stackoverflow.com/questions/2226769/bad-performance-with-oracledatareader
+                cmd.InitialLOBFetchSize = -1;
 
-            var reader = cmd.ExecuteReader();
+                var reader = cmd.ExecuteReader();
 
-            while (reader.Read())
-            {
-                var line = reader.GetString(0);
-                sb.Append(line);
+                while (reader.Read())
+                {
+                    var line = reader.GetString(0);
+                    sb.Append(line);
+                }
+
+                reader.Close();
+
+                runningCommands.Remove(cmd);
+                cmd.Dispose();
+
+                return sb.ToString();
             }
-
-            reader.Close();
-
-            runningCommands.Remove(cmd);
-            cmd.Dispose();
-
-            return sb.ToString();
+            catch (Exception e)
+            {
+                using (EventLog eventLog = new EventLog("Application"))
+                {
+                    eventLog.Source = "Application";
+                    eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
+                }
+            }
         }
 
         protected string ConvertToUtVarchar2List(List<string> elements)
