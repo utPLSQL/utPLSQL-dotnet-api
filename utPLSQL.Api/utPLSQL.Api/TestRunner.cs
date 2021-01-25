@@ -55,6 +55,11 @@ namespace utPLSQL
         /// </summary>
         public void Close()
         {
+            foreach (var command in runningCommands)
+            {
+                command.Cancel();
+            }
+
             if (produceConnection != null)
             {
                 try { 

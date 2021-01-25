@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>utPLSQL.Api</id>
-    <version>1.5.3</version>
+    <version>1.5.4</version>
     <title>utPLSQL API</title>
     <authors>Simon Martinelli</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/utPLSQL/utPLSQL-dotnet-api</projectUrl>
 	<icon>images/blue-icon-transparent.png</icon>
     <description>.NET API for utPLSQL</description>
-    <releaseNotes>Connection closing improved</releaseNotes>
+    <releaseNotes>Cancel running commands when closing</releaseNotes>
     <copyright>Copyright © 2021</copyright>
     <tags>utPLSQL</tags>
   </metadata>
