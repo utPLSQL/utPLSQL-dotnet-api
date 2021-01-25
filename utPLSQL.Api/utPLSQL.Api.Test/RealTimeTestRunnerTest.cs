@@ -10,13 +10,16 @@ namespace utPLSQL
     [TestClass]
     public class RealTimeTestRunnerTest
     {
+        const string username = "ut3_tester";
+        const string password = "ut3";
+        const string database = "xepdb1";
 
         [TestMethod]
         public async Task TestRunTests()
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username, password, database);
 
             var events = new List<@event>();
             await testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
@@ -35,7 +38,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "sys", password: "Oradoc_db1", database: "orclpdb1", connectAs: "sysdba");
+            testRunner.Connect(username: "sys", password: "oracle", database: database, connectAs: "sysdba");
 
             try
             {
@@ -56,7 +59,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username, password, database);
 
             var events = new List<@event>();
 
@@ -75,9 +78,11 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username, password, database);
 
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event => { });
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             testRunner.Close();
         }
@@ -87,7 +92,7 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username, password, database);
 
             var events1 = new List<@event>();
             Task task1 = testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
@@ -111,9 +116,9 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username, password, database);
 
-            string version = testRunner.GetVersion();
+            var version = testRunner.GetVersion();
 
             Assert.AreEqual("v3.1.11.3469-develop", version);
 
@@ -125,11 +130,11 @@ namespace utPLSQL
         {
             var testRunner = new RealTimeTestRunner();
 
-            testRunner.Connect(username: "ut3_tester", password: "ut3", database: "orclpdb1");
+            testRunner.Connect(username, password, database);
 
             try
             {
-                string version = testRunner.GetVersion();
+                var version = testRunner.GetVersion();
                 Assert.Fail();
             }
             catch (OracleException e)

@@ -17,10 +17,10 @@ namespace utPLSQL
         {
             if (paths != null && paths.Count > 0)
             {
-                string realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
+                var realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                Task taskRun = Task.Run(() => { UtRun(realtimeReporterId, paths); });
-                Task taskConsume = Task.Run(() => { ConsumeResult(realtimeReporterId, consumer); });
+                var taskRun = Task.Run(() => UtRun(realtimeReporterId, paths));
+                var taskConsume = Task.Run(() => ConsumeResult(realtimeReporterId, consumer));
 
                 await Task.WhenAll(taskRun, taskConsume);
             }
@@ -28,23 +28,23 @@ namespace utPLSQL
 
         public override async Task RunTestsAsync(string path, Action<@event> consumer)
         {
-            await RunTestsAsync(new List<string>() { path }, consumer);
+            await RunTestsAsync(new List<string> { path }, consumer);
         }
 
         public override async Task<string> RunTestsWithCoverageAsync(List<string> paths, Action<@event> consumer, List<string> coverageSchemas = null, List<string> includeObjects = null, List<string> excludeObjects = null)
         {
             if (paths != null && paths.Count > 0)
             {
-                string realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
-                string coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
+                var realtimeReporterId = Guid.NewGuid().ToString().Replace("-", "");
+                var coverageReporterId = Guid.NewGuid().ToString().Replace("-", "");
 
-                Task taskRun = Task.Run(() => { UtRunWithCoverage(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects); });
-                Task taskConsume = Task.Run(() => { ConsumeResult(realtimeReporterId, consumer); });
-                Task<string> taskCoverateReport = Task.Run(() => { return GetCoverageReport(coverageReporterId); });
+                var taskRun = Task.Run(() => UtRunWithCoverage(realtimeReporterId, coverageReporterId, paths, coverageSchemas, includeObjects, excludeObjects));
+                var taskConsume = Task.Run(() => ConsumeResult(realtimeReporterId, consumer));
+                var taskCoverageReport = Task.Run(() => GetCoverageReport(coverageReporterId));
 
-                await Task.WhenAll(taskRun, taskConsume, taskCoverateReport);
+                await Task.WhenAll(taskRun, taskConsume, taskCoverageReport);
 
-                return taskCoverateReport.Result;
+                return taskCoverageReport.Result;
             }
             else
             {
@@ -54,7 +54,7 @@ namespace utPLSQL
 
         public override async Task<string> RunTestsWithCoverageAsync(string path, Action<@event> consumer, string coverageSchema = null, List<string> includeObjects = null, List<string> excludeObjects = null)
         {
-            return await RunTestsWithCoverageAsync(new List<string>() { path }, consumer, new List<string>() { coverageSchema }, includeObjects, excludeObjects);
+            return await RunTestsWithCoverageAsync(new List<string> { path }, consumer, new List<string> { coverageSchema }, includeObjects, excludeObjects);
         }
 
         private void UtRunWithCoverage(string realtimeReporterId, string coverageReporterId, List<string> paths, List<string> coverageSchemas, List<string> includeObjects, List<string> excludeObjects)

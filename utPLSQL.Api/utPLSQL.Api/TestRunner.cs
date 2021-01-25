@@ -13,10 +13,10 @@ namespace utPLSQL
     /// <typeparam name="T">Type of result class used in callback action</typeparam>
     public abstract class TestRunner<T>
     {
-        internal OracleConnection produceConnection;
-        internal OracleConnection consumeConnection;
+        protected OracleConnection produceConnection;
+        protected OracleConnection consumeConnection;
 
-        protected List<OracleCommand> runningCommands = new List<OracleCommand>();
+        protected readonly List<OracleCommand> runningCommands = new List<OracleCommand>();
 
         /// <summary>
         /// Connects to the database. 
@@ -38,7 +38,7 @@ namespace utPLSQL
                 connectionString = $"User Id={username};DBA Privilege={connectAs};Password={password};Data Source={database}";
             }
 
-            foreach (OracleCommand command in runningCommands)
+            foreach (var command in runningCommands)
             {
                 command.Cancel();
             }
@@ -49,25 +49,48 @@ namespace utPLSQL
             consumeConnection = new OracleConnection(connectionString);
             consumeConnection.Open();
         }
+        
         /// <summary>
         /// Closes both connections
         /// </summary>
         public void Close()
         {
-            produceConnection?.Close();
-            consumeConnection?.Close();
+            foreach (var command in runningCommands)
+            {
+                command.Cancel();
+            }
+
+            if (produceConnection != null)
+            {
+                try { 
+                produceConnection.Close();
+                }
+                catch
+                {
+                }
+            }
+            if (consumeConnection != null)
+            {
+                try
+                {
+                    consumeConnection.Close();
+                }
+                catch
+                {
+                }
+            }
         }
 
         /// <summary>
         /// Returns the installed utPLSQL version
         /// </summary>
         /// <returns>Version as string</returns>
-        public String GetVersion()
+        public string GetVersion()
         {
             var cmd = new OracleCommand("select ut.version() from dual", produceConnection);
             runningCommands.Add(cmd);
 
-            OracleDataReader reader = cmd.ExecuteReader();
+            var reader = cmd.ExecuteReader();
             reader.Read();
 
             var version = reader.GetString(0);
@@ -155,7 +178,7 @@ namespace utPLSQL
         protected string ConvertToUtVarchar2List(List<string> elements)
         {
             var sb = new StringBuilder();
-            bool first = true;
+            var first = true;
             foreach (var element in elements)
             {
                 if (!first)
