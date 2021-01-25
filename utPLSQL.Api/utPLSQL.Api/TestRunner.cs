@@ -134,6 +134,7 @@ namespace utPLSQL
                     eventLog.Source = "Application";
                     eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
                 }
+                return null;
             }
         }
 
@@ -217,6 +218,7 @@ namespace utPLSQL
                     eventLog.Source = "Application";
                     eventLog.WriteEntry($"{e.Message}\r\n{e.StackTrace}", EventLogEntryType.Error);
                 }
+                return null;
             }
         }
 
