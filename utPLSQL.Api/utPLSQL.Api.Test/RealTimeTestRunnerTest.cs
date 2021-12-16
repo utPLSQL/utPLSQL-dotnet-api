@@ -10,9 +10,9 @@ namespace utPLSQL
     [TestClass]
     public class RealTimeTestRunnerTest
     {
-        const string username = "ut3_tester";
-        const string password = "ut3";
-        const string database = "xepdb1";
+        const string username = "TESTS_OWNER";
+        const string password = "pass";
+        const string database = "XE";
 
         [TestMethod]
         public async Task TestRunTests()
@@ -22,7 +22,7 @@ namespace utPLSQL
             testRunner.Connect(username, password, database);
 
             var events = new List<@event>();
-            await testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
+            await testRunner.RunTestsAsync("TESTS_OWNER.TEST_PKG_TEST_ME", @event =>
             {
                 events.Add(@event);
             });
@@ -42,7 +42,7 @@ namespace utPLSQL
 
             try
             {
-                await testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event => { });
+                await testRunner.RunTestsAsync("TESTS_OWNER.TEST_PKG_TEST_ME", @event => { });
 
                 Assert.Fail();
             }
@@ -63,8 +63,8 @@ namespace utPLSQL
 
             var events = new List<@event>();
 
-            string report = await testRunner.RunTestsWithCoverageAsync(path: "ut3_tester.test_ut_test", consumer: @event => { events.Add(@event); },
-                                                                       coverageSchema: "ut3_develop", includeObjects: new List<string>() { "ut_test" });
+            string report = await testRunner.RunTestsWithCoverageAsync(path: "TESTS_OWNER.TEST_PKG_TEST_ME", consumer: @event => { events.Add(@event); },
+                                                                       coverageSchema: "CODE_OWNER", includeObjects: new List<string>() { "PKG_TEST_ME" });
             Logger.LogMessage(report);
 
             Assert.AreEqual("pre-run", events[0].type);
@@ -95,13 +95,13 @@ namespace utPLSQL
             testRunner.Connect(username, password, database);
 
             var events1 = new List<@event>();
-            Task task1 = testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
+            Task task1 = testRunner.RunTestsAsync("TESTS_OWNER.TEST_PKG_TEST_ME", @event =>
             {
                 events1.Add(@event);
             });
 
             var events2 = new List<@event>();
-            Task task2 = testRunner.RunTestsAsync("ut3_tester.test_ut_test", @event =>
+            Task task2 = testRunner.RunTestsAsync("TESTS_OWNER.TEST_PKG_TEST_ME", @event =>
              {
                  events2.Add(@event);
              });
@@ -120,7 +120,7 @@ namespace utPLSQL
 
             var version = testRunner.GetVersion();
 
-            Assert.AreEqual("v3.1.11.3469-develop", version);
+            Assert.AreEqual("v3.1.11.3559", version);
 
             testRunner.Close();
         }
